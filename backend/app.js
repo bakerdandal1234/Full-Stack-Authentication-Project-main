@@ -14,10 +14,7 @@ const csrf = require('csurf');
 require('dotenv').config();
 
 // Import local modules
-const User = require('./models/Schema');
-const PassportAuthenticator = require('./config/passport');
-const { Strategy: GitHubStrategy } = require('passport-github2');
-const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
+const oauth = require('./config/oauth');
 
 // Initialize Express app
 const app = express();
@@ -79,36 +76,8 @@ app.use(cors({
 // Authentication Setup
 // ============================================================================
 
-const passportAuth = new PassportAuthenticator(User);
-
-// Configure OAuth strategies
-const configureOAuth = () => {
-    try {
-        // GitHub Strategy
-        passportAuth.addStrategy('github', GitHubStrategy, {
-            clientID: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET,
-            callbackURL: process.env.GITHUB_CALLBACK_URL,
-            scope: ['user:email']
-        });
-
-        // Google Strategy
-        passportAuth.addStrategy('google', GoogleStrategy, {
-            clientID: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: process.env.GOOGLE_CALLBACK_URL,
-            scope: ['profile', 'email']
-        });
-    } catch (error) {
-        console.error('❌ OAuth configuration error:', error);
-    }
-};
-
-configureOAuth();
-
-// Initialize Passport
-app.use(passportAuth.getPassport().initialize());
-app.use(passportAuth.getPassport().session());
+// Initialize passport middleware
+app.use(...oauth.initialize());
 
 // ============================================================================
 // Security Middleware (CSRF)
@@ -117,7 +86,8 @@ app.use(passportAuth.getPassport().session());
 // Routes that don't require CSRF protection
 const CSRF_EXCLUDED_PATHS = [
     '/login',                    // Initial login
-    '/signup',                   // New account creation
+    '/signup',    
+    '/logout',                    // Logout
     '/reset-password',           // Password reset request
     '/verify-email',             // Email verification
     '/verify-reset-token',       // Verify reset token
@@ -175,7 +145,7 @@ app.use('/auth', authRouter);  // Authentication routes
 app.use(mainRouter);          // General routes
 
 // Protected route example
-app.get('/protected', passportAuth.isAuthenticated, (req, res) => {
+app.get('/protected', oauth.isAuthenticated, (req, res) => {
     res.json({
         status: 'success',
         data: { user: req.user }

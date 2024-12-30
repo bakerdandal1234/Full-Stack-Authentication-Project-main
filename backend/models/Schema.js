@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
     username: {
         type: String,
         required: function() {
-            return !this.githubId && !this.googleId; // Only required if not using OAuth
+            return !this.githubId && !this.googleId && !this.linkedinId; // Only required if not using OAuth
         },
         unique: true,
         sparse: true
@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: function() {
-            return !this.githubId && !this.googleId; // Only required if not using OAuth
+            return !this.githubId && !this.googleId && !this.linkedinId; // Only required if not using OAuth
         }
     },
     githubId: {
@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema({
         unique: true
     },
     googleId: {
+        type: String,
+        sparse: true,
+        unique: true
+    },
+    discoredId: {
         type: String,
         sparse: true,
         unique: true
