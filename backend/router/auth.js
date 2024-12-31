@@ -6,7 +6,7 @@ const User = require('../models/Schema');
 const { verifyToken } = require('../middleware');
 
 // Constants
-const APP_URL = 'http://localhost:5173';
+const APP_URL = 'http://localhost:5174';
 const ROUTES = {
     LOGIN: `${APP_URL}/login`,
     SUCCESS: `${APP_URL}/auth/success`
@@ -62,7 +62,11 @@ const handleOAuthCallback = (provider) => async (req, res, next) => {
 router.get('/github', passport.authenticate('github'));
 router.get('/github/callback', handleOAuthCallback('github'));
 
-router.get('/google', passport.authenticate('google'));
+router.get('/google', passport.authenticate('google', {
+    scope: ['profile', 'email', 'openid'],
+    accessType: 'offline',
+    prompt: 'consent'
+}));
 router.get('/google/callback', handleOAuthCallback('google'));
 
 router.get('/linkedin', passport.authenticate('linkedin'));

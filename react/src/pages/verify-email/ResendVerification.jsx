@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Alert } from '@mui/material';
-import api from '../../utils/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const ResendVerification = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +9,7 @@ const ResendVerification = () => {
     error: '',
     success: ''
   });
+  const { resendVerification } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,20 +20,16 @@ const ResendVerification = () => {
 
     setStatus({ loading: true, error: '', success: '' });
 
-    try {
-      const response = await api.post('/resend-verification', { email });
-      setStatus({
-        loading: false,
-        error: '',
-        success: response.data.message
-      });
+    const result = await resendVerification(email);
+    
+    setStatus({
+      loading: false,
+      error: result.success ? '' : result.message,
+      success: result.success ? result.message : ''
+    });
+    
+    if (result.success) {
       setEmail('');
-    } catch (error) {
-      setStatus({
-        loading: false,
-        error: error.response?.data?.message || 'Error sending verification email',
-        success: ''
-      });
     }
   };
 

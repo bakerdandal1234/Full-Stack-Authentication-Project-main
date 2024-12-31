@@ -10,26 +10,30 @@ import {
   Modal,
   IconButton,
   Alert,
-  Avatar,
   InputAdornment,
   Divider,
-  Stack,
-  Grid
+  Paper,
+  useTheme,
+  useMediaQuery,
+  Fade
 } from '@mui/material';
 import {
-  LockOutlined as LockOutlinedIcon,
   Visibility,
   VisibilityOff,
   Email as EmailIcon,
   Key as KeyIcon,
   Google as GoogleIcon,
   GitHub as GitHubIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Login as LoginIcon
 } from '@mui/icons-material';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, forgotPassword } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -62,7 +66,6 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setFormData(prev => ({
       ...prev,
       errors: {
@@ -92,7 +95,7 @@ const Login = () => {
               password: result.errorPassword
             }
           }));
-        }else if (!result.needsVerification) {
+        } else if (!result.needsVerification) {
           setFormData(prev => ({
             ...prev,
             errors: {
@@ -100,8 +103,7 @@ const Login = () => {
               verification: result.message
             }
           }));
-        }
-         else {
+        } else {
           setFormData(prev => ({
             ...prev,
             errors: {
@@ -112,7 +114,6 @@ const Login = () => {
         }
         return;
       }
-
       navigate('/home');
     } catch (error) {
       console.error("Login error:", error);
@@ -136,438 +137,304 @@ const Login = () => {
 
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
-    
     try {
-      const response = await fetch('http://localhost:3000/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: formData.resetEmail }),
-      });
-
-      const data = await response.json();
-      console.log('Server response message:', data.message);
-      
+      const result = await forgotPassword(formData.resetEmail);
+      console.log(result)
       setFormData(prev => ({
         ...prev,
-        resetStatus: data.message
+        resetStatus: result.message,
+        showForgotPassword: !result.success
       }));
-
-      if (response.ok) {
-        setTimeout(() => {
-          setFormData(prev => ({
-            ...prev,
-            showForgotPassword: false,
-            resetEmail: '',
-            resetStatus: ''
-          }));
-        }, 3000);
-      }
     } catch (error) {
-      console.error('Reset password error:', error);
+      console.error('Password reset error:', error);
       setFormData(prev => ({
         ...prev,
-        resetStatus: 'Failed to connect to the server'
+        resetStatus: 'Failed to connect to the server. Please try again later.'
       }));
     }
   };
 
   return (
-    <Container component="main" maxWidth="sm">
+    <Container component="main" maxWidth="sm" sx={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      py: 4
+    }}>
+      <Fade in timeout={800}>
+        <Paper elevation={6} sx={{
+          p: { xs: 3, sm: 6 },
+          width: '100%',
+          borderRadius: 2,
+          background: 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.3)',
+        }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 3
+          }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mb: 2
+            }}>
+              <LoginIcon sx={{ 
+                fontSize: 40, 
+                color: 'primary.main',
+                transform: 'rotate(-10deg)'
+              }} />
+              <Typography component="h1" variant="h4" fontWeight="bold">
+                Welcome Back
+              </Typography>
+            </Box>
+
+            {formData.errors.general && (
+              <Alert severity="error" sx={{ width: '100%' }}>
+                {formData.errors.general}
+              </Alert>
+            )}
+
+            {formData.errors.verification && (
+              <Alert severity="warning" sx={{ width: '100%' }}>
+                {formData.errors.verification}
+              </Alert>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', gap: 2.5, display: 'flex', flexDirection: 'column' }}>
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                error={!!formData.errors.email}
+                helperText={formData.errors.email}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                  },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                label="Password"
+                name="password"
+                type={formData.showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                error={!!formData.errors.password}
+                helperText={formData.errors.password}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <KeyIcon color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {formData.showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                  },
+                }}
+              />
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{
+                  py: 1.5,
+                  mt: 1,
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  textTransform: 'none',
+                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1976D2 30%, #00BCD4 90%)',
+                  }
+                }}
+              >
+                Sign In
+              </Button>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <Button
+                  onClick={() => setFormData(prev => ({ ...prev, showForgotPassword: true }))}
+                  sx={{ 
+                    textTransform: 'none',
+                    fontSize: '0.9rem',
+                    color: 'text.secondary',
+                    '&:hover': { color: 'primary.main' }
+                  }}
+                >
+                  Forgot password?
+                </Button>
+                <Button
+                  component={Link}
+                  to="/signup"
+                  sx={{ 
+                    textTransform: 'none',
+                    fontSize: '0.9rem',
+                    color: 'primary.main',
+                    '&:hover': { color: 'primary.dark' }
+                  }}
+                >
+                  Create account
+                </Button>
+              </Box>
+
+              <Divider sx={{ my: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  OR
+                </Typography>
+              </Divider>
+
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: isMobile ? 'column' : 'row' }}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={handleGoogleLogin}
+                  startIcon={<GoogleIcon />}
+                  sx={{
+                    py: 1.5,
+                    textTransform: 'none',
+                    borderColor: '#EA4335',
+                    color: '#EA4335',
+                    '&:hover': {
+                      borderColor: '#EA4335',
+                      backgroundColor: 'rgba(234, 67, 53, 0.04)',
+                    },
+                  }}
+                >
+                  login with Google
+                </Button>
+
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={handleGithubLogin}
+                  startIcon={<GitHubIcon />}
+                  sx={{
+                    py: 1.5,
+                    textTransform: 'none',
+                    borderColor: '#24292E',
+                    color: '#24292E',
+                    '&:hover': {
+                      borderColor: '#24292E',
+                      backgroundColor: 'rgba(36, 41, 46, 0.04)',
+                    },
+                  }}
+                >
+                 login with GitHub
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
+      </Fade>
+
       <Modal
         open={formData.showForgotPassword}
         onClose={() => setFormData(prev => ({ ...prev, showForgotPassword: false }))}
         aria-labelledby="forgot-password-modal"
       >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 400,
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          p: 4,
-          borderRadius: 2
-        }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Reset Password</Typography>
-            <IconButton onClick={() => setFormData(prev => ({ ...prev, showForgotPassword: false }))} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-         
-          <form onSubmit={handleForgotPasswordSubmit}>
-            <Box sx={{ 
-              mb: 2, 
-              p: 2.5,
-              minHeight: '50px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: 2,
-              color: '#6366f1',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
-              boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-              position: 'relative',
-              overflow: 'hidden',
-              transition: 'all 0.3s ease-in-out',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '2px',
-                background: 'linear-gradient(90deg, #4f46e5 0%, #6366f1 100%)'
-              },
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '2px',
-                background: 'linear-gradient(90deg, #6366f1 0%, #4f46e5 100%)'
-              },
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 10px 40px 0 rgba(99, 102, 241, 0.4)',
-                bgcolor: 'rgba(255, 255, 255, 0.15)'
-              }
-            }}>
-              <Typography
-                variant="body1"
-                sx={{
-                  fontWeight: 500,
-                  letterSpacing: '0.5px',
-                  fontSize: '0.95rem',
-                  animation: 'fadeIn 0.5s ease-in-out',
-                  '@keyframes fadeIn': {
-                    '0%': {
-                      opacity: 0,
-                      transform: 'translateY(10px)'
-                    },
-                    '100%': {
-                      opacity: 1,
-                      transform: 'translateY(0)'
-                    }
-                  }
-                }}
+        <Fade in={formData.showForgotPassword}>
+          <Paper sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: { xs: '90%', sm: 400 },
+            p: 4,
+            borderRadius: 2,
+            outline: 'none',
+          }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" fontWeight="bold">Reset Password</Typography>
+              <IconButton 
+                onClick={() => setFormData(prev => ({ ...prev, showForgotPassword: false }))}
+                size="small"
+                sx={{ color: 'text.secondary' }}
               >
-                {formData.resetStatus || 'Enter your email to reset password'}
-              </Typography>
+                <CloseIcon />
+              </IconButton>
             </Box>
-            <TextField
-              fullWidth
-              label="Email Address"
-              name="resetEmail"
-              type="email"
-              required
-              value={formData.resetEmail}
-              onChange={(e) => setFormData(prev => ({ ...prev, resetEmail: e.target.value }))}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon sx={{ color: 'primary.main' }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: 'rgba(99, 102, 241, 0.2)',
-                    transition: 'all 0.3s ease-in-out',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                    borderWidth: '2px',
-                  },
-                },
-                '& label.Mui-focused': {
-                  color: 'primary.main',
-                },
-                '& .MuiInputBase-input': {
-                  padding: '16px 14px',
-                  fontSize: '1rem',
-                  transition: 'all 0.3s ease-in-out',
-                  '&:focus': {
-                    transform: 'translateY(-2px)',
-                  },
-                },
-                animation: 'fadeIn 0.5s ease-in-out',
-                '@keyframes fadeIn': {
-                  '0%': {
-                    opacity: 0,
-                    transform: 'translateY(10px)',
-                  },
-                  '100%': {
-                    opacity: 1,
-                    transform: 'translateY(0)',
-                  },
-                },
-              }}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{
-                mt: 1,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                borderRadius: '8px',
-                background: 'linear-gradient(90deg, #4f46e5 0%, #6366f1 100%)',
-                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)',
-                transition: 'all 0.3s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 16px rgba(99, 102, 241, 0.3)',
-                  background: 'linear-gradient(90deg, #4338ca 0%, #4f46e5 100%)',
-                },
-                '&:active': {
-                  transform: 'translateY(0)',
-                  boxShadow: '0 2px 8px rgba(99, 102, 241, 0.2)',
-                },
-              }}
-            >
-              Reset Password
-            </Button>
-          </form>
-        </Box>
-      </Modal>
 
-      <Box
-        sx={{
-          mt: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.13) 100%)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: 4,
-          p: 4,
-          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <Avatar
-          sx={{
-            m: 1,
-            bgcolor: 'secondary.main',
-            width: 56,
-            height: 56,
-            transform: 'scale(1)',
-            transition: 'transform 0.3s ease-in-out',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            '&:hover': {
-              transform: 'scale(1.1)',
-              boxShadow: '0 6px 25px rgba(0,0,0,0.2)',
-            },
-          }}
-        >
-          <LockOutlinedIcon sx={{ fontSize: 32 }} />
-        </Avatar>
+            {formData.resetStatus && (
+              <Alert 
+                severity={formData.resetStatus.includes('success') ? 'success' : 'error'}
+                sx={{ mb: 2 }}
+              >
+                {formData.resetStatus}
+              </Alert>
+            )}
 
-        <Typography
-          component="h1"
-          variant="h5"
-          sx={{
-            mb: 3,
-            background: 'linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)',
-            backgroundClip: 'text',
-            textFillColor: 'transparent',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
-          Welcome Back!
-        </Typography>
+            <form onSubmit={handleForgotPasswordSubmit}>
+              <TextField
+                fullWidth
+                label="Email"
+                name="resetEmail"
+                type="email"
+                value={formData.resetEmail}
+                onChange={handleChange}
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={formData.email}
-            onChange={handleChange}
-            error={!!formData.errors.email}
-            helperText={formData.errors.email}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon sx={{ color: 'action.active' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type={formData.showPassword ? 'text' : 'password'}
-            id="password"
-            autoComplete="current-password"
-            value={formData.password}
-            onChange={handleChange}
-            error={!!formData.errors.password}
-            helperText={formData.errors.password}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <KeyIcon sx={{ color: 'action.active' }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleClickShowPassword}
-                    edge="end"
-                  >
-                    {formData.showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {formData.errors.general && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {formData.errors.general}
-            </Alert>
-          )}
-
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{
-              mt: 3,
-              mb: 2,
-              py: 1.5,
-              borderRadius: 2,
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-              boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-              transition: 'transform 0.2s ease-in-out',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                transform: 'scale(1.02)',
-                boxShadow: '0 6px 10px 2px rgba(33, 203, 243, .3)',
-              },
-            }}
-          >
-            Sign In
-          </Button>
-
-          <Grid container>
-            <Grid item xs>
               <Button
-                onClick={() => setFormData(prev => ({ ...prev, showForgotPassword: true }))}
+                type="submit"
+                fullWidth
+                variant="contained"
                 sx={{
+                  py: 1.5,
                   textTransform: 'none',
-                  color: 'text.secondary',
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
                   '&:hover': {
-                    color: 'primary.main',
-                    backgroundColor: 'transparent',
-                    textDecoration: 'underline',
+                    background: 'linear-gradient(45deg, #1976D2 30%, #00BCD4 90%)',
                   }
                 }}
               >
-                Forgot Password?
+                Send Reset Link
               </Button>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              OR
-            </Typography>
-          </Divider>
-
-          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<GoogleIcon />}
-              onClick={handleGoogleLogin}
-              sx={{ 
-                py: 1.5,
-                borderRadius: 2,
-                borderColor: '#dd4b39',
-                color: '#dd4b39',
-                transition: 'all 0.3s ease-in-out',
-                '&:hover': {
-                  borderColor: '#dd4b39',
-                  bgcolor: 'rgba(221, 75, 57, 0.04)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 8px rgba(221, 75, 57, 0.2)',
-                }
-              }}
-            >
-              Google
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<GitHubIcon />}
-              onClick={handleGithubLogin}
-              sx={{ 
-                py: 1.5,
-                borderRadius: 2,
-                borderColor: '#333',
-                color: '#333',
-                transition: 'all 0.3s ease-in-out',
-                '&:hover': {
-                  borderColor: '#333',
-                  bgcolor: 'rgba(51, 51, 51, 0.04)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 8px rgba(51, 51, 51, 0.2)',
-                }
-              }}
-            >
-              GitHub
-            </Button>
-          </Stack>
-
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Don't have an account?{' '}
-              <Link 
-                to="/signup" 
-                style={{ 
-                  color: '#1976d2', 
-                  textDecoration: 'none', 
-                  fontWeight: 500 
-                }}
-              >
-                Sign up here
-              </Link>
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+            </form>
+          </Paper>
+        </Fade>
+      </Modal>
     </Container>
   );
 };

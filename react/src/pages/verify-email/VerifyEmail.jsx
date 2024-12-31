@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import api from '../../utils/axios';
+import { useAuth } from '../../context/AuthContext';
 import ResendVerification from './ResendVerification';
 
 const VerifyEmail = () => {
@@ -13,35 +13,20 @@ const VerifyEmail = () => {
     isExpired: false
   });
   const { token } = useParams();
+  const { verifyEmail } = useAuth();
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      try {
-        const response = await api.get(`/verify-email/${token}`);
-        setState({
-          status: 'success',
-          message: response.data.message,
-          isExpired: false
-        });
-      } catch (error) {
-        if (error.response) {
-          setState({
-            status: 'error',
-            message: error.response.data.message,
-            isExpired: error.response.data.isExpired || false
-          });
-        } else {
-          setState({
-            status: 'error',
-            message: 'Error during verification',
-            isExpired: false
-          });
-        }
-      }
+    const verify = async () => {
+      const result = await verifyEmail(token);
+      setState({
+        status: result.success ? 'success' : 'error',
+        message: result.message,
+        isExpired: result.isExpired
+      });
     };
 
-    verifyEmail();
-  }, [token]);
+    verify();
+  }, [token, verifyEmail]);
 
   const renderContent = () => {
     switch (state.status) {

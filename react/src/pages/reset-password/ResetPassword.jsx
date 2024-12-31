@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import axios from '../../utils/axios';
 import {
   Container,
@@ -20,11 +21,15 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { token } = useParams();
+  const { verifyResetToken, resetPassword } = useAuth();
 
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        await axios.get(`/verify-reset-token/${token}`);
+        const result = await verifyResetToken(token);
+        if (!result.success) {
+          setTokenExpired(true);
+        }
         setLoading(false);
       } catch (error) {
         console.error('Token verification error:', error);
@@ -33,7 +38,10 @@ const ResetPassword = () => {
       }
     };
     verifyToken();
-  }, [token]);
+  }, [token, verifyResetToken]);
+
+
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,16 +61,17 @@ const ResetPassword = () => {
     }
 
     try {
-      const response = await axios.post(`/reset-password/${token}`, {
-        newPassword
-      });
-
-      setSuccess(response.data.message);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      const result = await resetPassword(token, newPassword);
+      if (result.success) {
+        setSuccess(result.message);
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        setError(result.message);
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور');
+      setError('حدث خطأ أثناء إعادة تعيين كلمة المرور');
     }
   };
 
