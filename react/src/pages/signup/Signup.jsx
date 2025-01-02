@@ -76,21 +76,21 @@ const Signup = () => {
 
     try {
       const result = await signup(formData.username, formData.email, formData.password);
-
+      console.log(result)
       if (!result.success) {
-        if (result.errors && Array.isArray(result.errors)) {
+        if (result.error && Array.isArray(result.error)) {
           const newErrors = { ...formData.errors };
           
-          result.errors.forEach(item => {
+          result.error.forEach(item => {
             switch(item.path) {
               case 'email':
-                newErrors.email = "Please provide a valid email";
+                newErrors.email = item.msg;
                 break;
               case 'username':
-                newErrors.username = "Username is required";
+                newErrors.username = item.msg;
                 break;
               case 'password':
-                newErrors.password = "Password must be at least 6 characters";
+                newErrors.password = item.msg;
                 break;
               default:
                 break;
@@ -106,7 +106,7 @@ const Signup = () => {
             ...prev,
             errors: {
               ...prev.errors,
-              general: result.message
+              email: result.error
             }
           }));
         }
@@ -142,14 +142,13 @@ const Signup = () => {
       py: 4
     }}>
       <Fade in timeout={800}>
-        <Paper elevation={6} sx={{
-          p: { xs: 3, sm: 6 },
-          width: '100%',
-          borderRadius: 2,
-          background: 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255,255,255,0.3)',
-        }}>
+        <Paper elevation={6}sx={{
+            p: 4,
+            width: '100%',
+            background: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.3)',
+          }}>
           <Box sx={{ 
             display: 'flex', 
             flexDirection: 'column',
@@ -207,7 +206,7 @@ const Signup = () => {
                 fullWidth
                 label="Email"
                 name="email"
-                type="email"
+                type="text"
                 value={formData.email}
                 onChange={handleChange}
                 error={!!formData.errors.email}

@@ -10,7 +10,7 @@ const { sendResetPasswordEmail } = require('../utils/emailService');
 const { verifyToken } = require('../middleware')
 const { authenticateUser } = require('../middleware')
 const csrf = require('csurf');
-
+const { sendError, handleUnauthorized, handleValidationError, handleServerError } = require('../utils/errorHandler');
 // Middleware for parsing JSON bodies
 router.use(express.json());
 
@@ -35,22 +35,20 @@ const signupValidation = [
 // Signup route
 router.post('/signup', signupValidation, async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+  // التحقق من وجود أخطاء في التحقق
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return handleValidationError(res, errors.array());
+  }
 
-    const { username, email, password } = req.body;
+  const { username, email, password } = req.body;
 
+  
     // Check if user already exists
     const existingUser = await User.findOne({email});
      
-
     if (existingUser) {
-      return res.status(400).json({
-        message: 'User with this email or username already exists'
-      });
+      return handleValidationError(res, 'User with this email or username already exists');
     }
 
     // Generate verification token
@@ -90,9 +88,9 @@ router.post('/signup', signupValidation, async (req, res) => {
 
     // Send verification email
     // await sendVerificationEmail(email, verificationToken);
-
+      
     // Send response
-    res.status(201).json({
+      return res.status(201).json({
       message: 'User created successfully. Please check your email for verification.',
       accessToken,
       user: {
@@ -102,10 +100,10 @@ router.post('/signup', signupValidation, async (req, res) => {
         isVerified: user.isVerified
       }
     });
-
+    return 
   } catch (error) {
     console.error('Signup error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return handleServerError(res, error);
   }
 });
 
@@ -121,37 +119,27 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       console.log('User not found:', email);
-      return res.status(401).json({ 
-        success: false,
-        errorEmail: 'Email not found. Please check your email and try again.'
-      });
+      return handleUnauthorized(res, 'Email not found. Please check your email and try again.');
     }
 
     // Check if user was created through OAuth
     if (user.googleId || user.githubId) {
-      return res.status(401).json({
-        success: false,
-        errorEmail: 'This email is associated with a Google or GitHub account. Please sign in with the appropriate social login.'
-      });
+      return handleUnauthorized(res,  'This email is associated with a Google or GitHub account. Please sign in with the appropriate social login.' );
     }
 
     // Check password using schema method
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       console.log('Invalid password for:', email);
-      return res.status(401).json({ 
-        success: false,
-        errorPassword: 'Password is incorrect. Please try again.'
-      });
+      return handleUnauthorized(res,  'Password is incorrect. Please try again.');
     }
-
-    // Check if user is verified
+     
+  // Check if user is verified
     // if (!user.isVerified) {
-    //   return res.status(401).json({ 
-    //     message: 'Please verify your email before logging in',
-    //     needsVerification: true 
-    //   });
+    //   return handleUnauthorized(res,   'Please verify your email before logging in');
     // }
+    
+  
 
     // Generate tokens
     const accessToken = jwt.sign(
@@ -166,18 +154,16 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // إنشاء توكن CSRF
-    const csrfToken = csrf({ cookie: true })
-    res.cookie('XSRF-TOKEN', csrfToken, {
-      httpOnly: false,  
+    // Set tokens in cookies
+    res.cookie('token', accessToken, {
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/'
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000 // 15 minutes
     });
 
-    // توكن التحديث - يجب أن يكون httpOnly: true
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,  
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
@@ -188,7 +174,6 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       accessToken,
-      csrfToken,
       user: {
         _id: user._id,
         username: user.username,
@@ -198,7 +183,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Error during login' });
+    return handleServerError(res, error);
   }
 });
 
@@ -209,7 +194,7 @@ router.post('/refresh', async (req, res) => {
     console.log('Refresh token received:', !!refreshToken); // Debug log
     
     if (!refreshToken) {
-      return res.status(401).json({ message: 'No refresh token provided' });
+      return handleUnauthorized(res, { message: 'No refresh token provided' });
     }
 
     // Verify the refresh token
@@ -220,7 +205,7 @@ router.post('/refresh', async (req, res) => {
     const user = await User.findById(decoded.userId).select('+refreshToken');
     if (!user) {
       console.log('User not found for token:', decoded.userId); // Debug log
-      return res.status(401).json({ message: 'User not found' });
+      return handleUnauthorized(res, { message: 'User not found' });
     }
 
 
@@ -237,7 +222,7 @@ router.post('/refresh', async (req, res) => {
     res.json({ accessToken });
   } catch (error) {
     console.error('Refresh token error:', error);
-    res.status(500).json({ message: 'Error refreshing token' });
+    return handleServerError(res, error);
   }
 });
 
@@ -253,7 +238,7 @@ router.post('/logout',authenticateUser, (req, res) => {
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error);
-    res.status(500).json({ message: 'Error during logout' });
+    return handleServerError(res, error);
   }
 });
 
@@ -281,11 +266,7 @@ router.get('/verify-email/:token', async (req, res) => {
     console.log('Token expiry:', user?.verificationTokenExpiry);
 
     if (!user) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid or expired verification link',
-        isExpired: true
-      });
+      return handleValidationError(res, 'Invalid or expired verification link');
     }
 
     if (user.isVerified) {
@@ -319,10 +300,7 @@ router.get('/verify-email/:token', async (req, res) => {
     });
   } catch (error) {
     console.error('Email verification error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'An error occurred during email verification'
-    });
+    return handleServerError(res, error);
   }
 });
 // إعادة إرسال رابط التحقق
@@ -331,22 +309,16 @@ router.post('/resend-verification', async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({
-        message: 'Email is required'
-      });
+      return handleValidationError(res, 'Email is required');
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({
-        message: 'No account found with this email'
-      });
+      return handleUnauthorized(res, { message: 'No account found with this email' });
     }
 
     if (user.isVerified) {
-      return res.status(400).json({
-        message: 'Email is already verified'
-      });
+      return handleValidationError(res, 'Email is already verified');
     }
 
     // Create new verification token
@@ -365,9 +337,7 @@ router.post('/resend-verification', async (req, res) => {
     });
   } catch (error) {
     console.error('Resend verification error:', error);
-    res.status(500).json({
-      message: 'An error occurred while sending the verification link'
-    });
+    return handleServerError(res, error);
   }
 });
 
@@ -380,13 +350,13 @@ router.post('/reset-password', async (req, res) => {
     // التحقق من وجود المستخدم
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: 'No account found with this email' });
+      return handleUnauthorized(res, 'No account found with this email');
     }
 
     // إنشاء رمز إعادة تعيين كلمة المرور
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpiry = Date.now() + (60* 60 * 1000); // صالح لمدة ساعة واحدة
+    user.resetPasswordExpiry = Date.now() + (60 * 60 * 1000); // صالح لمدة ساعة واحدة
     await user.save();
 
     console.log('Generated new reset token with expiry:', user.resetPasswordExpiry);
@@ -397,7 +367,7 @@ router.post('/reset-password', async (req, res) => {
     res.json({ message: 'Password reset link has been sent to your email' });
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(500).json({ message: 'An error occurred while sending the password reset link' });
+    return handleServerError(res, error);
   }
 });
 
@@ -405,30 +375,21 @@ router.post('/reset-password', async (req, res) => {
 router.get('/verify-reset-token/:token', async (req, res) => {
   try {
     const { token } = req.params;
-    console.log('Verifying token:', token);
-
-    // البحث عن المستخدم بواسطة الرمز
+    
+    // البحث عن المستخدم بواسطة الرمز والتحقق من الصلاحية
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpiry: { $gt: Date.now() }
     });
 
-    console.log('User found:', user);
-    console.log('Current time:', Date.now());
-    console.log('Token expiry:', user?.resetPasswordExpiry);
-
     if (!user) {
-      return res.status(400).json({
-        message: 'Invalid or expired password reset token'
-      });
+      return handleValidationError(res, 'The password reset link has expired. Please request a new link from the login page.');
     }
 
     res.json({ message: 'Token is valid' });
   } catch (error) {
-    console.error('Verify reset token error:', error);
-    res.status(500).json({
-      message: 'An error occurred while verifying the token'
-    });
+    console.error('Token verification error:', error);
+    handleServerError(res);
   }
 });
 
@@ -438,45 +399,29 @@ router.post('/reset-password/:token', async (req, res) => {
     const { token } = req.params;
     const { newPassword } = req.body;
 
-    console.log('Resetting password for token:', token);
-    
-    // البحث عن المستخدم بواسطة رمز إعادة تعيين كلمة المرور
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpiry: { $gt: Date.now() }
-    });
-
-    console.log('User found:', user);
-    console.log('Current time:', Date.now());
-    console.log('Token expiry:', user?.resetPasswordExpiry);
-
-    if (!user) {
-      return res.status(400).json({
-        message: 'Invalid or expired password reset token'
-      });
-    }
-
     // التحقق من قوة كلمة المرور الجديدة
     if (newPassword.length < 6) {
-      return res.status(400).json({
-        message: 'Password must be at least 6 characters long'
-      });
+      return handleValidationError(res, 'Password must be at least 6 characters long');
     }
 
-    // تحديث كلمة المرور وإزالة رمز إعادة التعيين
-    user.password = newPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpiry = undefined;
-    await user.save();
+    // تحديث كلمة المرور مباشرة
+    const user = await User.findOneAndUpdate(
+      { resetPasswordToken: token },
+      {
+        password: newPassword,
+        resetPasswordToken: undefined,
+        resetPasswordExpiry: undefined
+      },
+      { new: true }
+    );
 
-    console.log('Password reset successful');
-
-    res.json({ message: 'Password reset successfully' });
-  } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).json({
-      message: 'An error occurred while resetting the password'
+    res.json({ 
+      success: true,
+      message: 'Your password has been successfully reset. Please login with your new password.' 
     });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    handleServerError(res);
   }
 });
 

@@ -1,20 +1,29 @@
 const jwt = require('jsonwebtoken');
 const User = require('./models/Schema');
 
-// Verify Access Token Middleware  router.use only for check access token,use protetct-route
+// Verify Access Token Middleware
 const verifyToken = async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader?.startsWith('Bearer ')) {
+        // Check both cookies and Authorization header
+        const token = req.cookies.token || 
+                     (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+
+        if (!token) {
             return res.status(401).json({ message: 'Access token required' });
         }
-        console.log("authHeader:",authHeader)
 
-        const accessToken = authHeader.split(' ')[1];
-        console.log("accessToken:",accessToken)
+        console.log("Token found:", token);
+
         try {
-            const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
-            console.log("decoded :",decoded)
+            // Try both secrets since we don't know which type of token it is
+            let decoded;
+            try {
+                decoded = jwt.verify(token, process.env.JWT_SECRET);
+            } catch {
+                decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+            }
+
+            console.log("Decoded token:", decoded);
             const user = await User.findById(decoded.userId);
             
             if (!user) {
@@ -33,6 +42,7 @@ const verifyToken = async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid access token' });
         }
     } catch (error) {
+        console.error('Auth middleware error:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };

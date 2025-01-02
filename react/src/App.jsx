@@ -11,8 +11,16 @@ import AuthSuccess from './pages/auth/AuthSuccess';
 import Profile from './pages/profile/Profile';
 import ResetPassword from './pages/reset-password/ResetPassword';
 
+
+
+import { ColorModeContext,useMode } from './pages/theme';
+import { CssBaseline, ThemeProvider } from '@mui/material';
 function App() {
+  const [theme, colorMode] = useMode();
   return (
+    <ColorModeContext.Provider value={colorMode}>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
     <Router>
       <AuthProvider>
         <Routes>
@@ -43,6 +51,9 @@ function App() {
         </Routes>
       </AuthProvider>
     </Router>
+    </ThemeProvider>
+    </ColorModeContext.Provider>
+
   );
 }
 

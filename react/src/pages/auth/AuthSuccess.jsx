@@ -30,6 +30,7 @@ const AuthSuccess = () => {
       
       initAuth();
     } else {
+      console.error('No token received from OAuth provider');
       navigate('/login');
     }
   }, [location, navigate, setIsAuthenticated, checkAuth]);

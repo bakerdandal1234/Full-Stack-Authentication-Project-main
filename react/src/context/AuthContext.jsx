@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api, {
-  getAccessToken,
+import {
   setAccessToken,
+  getAccessToken,
   addTokenObserver,
   removeTokenObserver,
 } from "../utils/axios";
+
 const AuthContext = createContext(null);
 
 export function useAuth() {
@@ -37,15 +38,16 @@ export const AuthProvider = ({ children }) => {
       if (!response.ok) {
         setUser(null);
         setIsAuthenticated(false);
-        return;
+        throw new Error(data.message || 'Authentication failed');
       }
 
-      setUser(data.user);
+      setUser(data);
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Auth check error:", error);
       setUser(null);
       setIsAuthenticated(false);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +71,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+
   const handleLogout = async () => {
     try {
       const response = await fetch("http://localhost:3000/logout", {
@@ -78,8 +81,8 @@ export const AuthProvider = ({ children }) => {
           "Content-Type": "application/json",
         },
       });
-
-      if (response.ok) {
+      
+      if (response.status === 200) {
         setUser(null);
         setIsAuthenticated(false);
         setAccessToken(null);
@@ -87,6 +90,10 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Logout error:", error);
+      // Force logout on client side even if server request fails
+      setUser(null);
+      setIsAuthenticated(false);
+      setAccessToken(null);
     }
   };
 
@@ -102,23 +109,67 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
+      console.log('Server response:', data);
       
+      // If login was successful
+      if (data.success) {
+        setAccessToken(data.accessToken);
+        setUser(data.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      
+      // Return error from server
+      return { 
+        success: false,
+        error: data.error
+      };
+    } catch (error) {
+      console.error('Login error:', error);
+      return {
+        success: false,
+        error: 'Failed to connect to the server. Please try again.'
+      };
+    }
+  };
+  const signup = async (username, email, password) => {
+    try {
+      const response = await fetch("http://localhost:3000/signup", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
+      
+      const data = await response.json();
+      console.log('Signup response:', data);
+
+      // إذا كان هناك خطأ من السيرفر
       if (!response.ok) {
         return {
           success: false,
-          ...data,
+          error: data.error || 'Signup failed'
         };
       }
 
-      setAccessToken(data.accessToken);
-      setUser(data.user);
-      setIsAuthenticated(true);
-      return { success: true, user: data.user };
+      // في حالة النجاح
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
+        setUser(data.user);
+        setIsAuthenticated(true);
+      }
+
+      return {
+        success: true,
+        message: data.message
+      };
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Signup error:", error);
       return {
         success: false,
-        message: "Failed to connect to the server",
+        error: 'Failed to connect to the server. Please try again.'
       };
     }
   };
@@ -217,43 +268,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-
-  const signup = async (username, email, password) => {
-    try {
-      const response = await fetch("http://localhost:3000/signup", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, email, password }),
-      });
-      
-      const data = await response.json();
-      console.log(data)
-      if (!response.ok) {
-        return {
-            success: false,
-            ...data, // ينقل كل البيانات من السيرفر
-        };
-    }
-
-      return {
-        success: true,
-        message: data.message,
-      };
-    } catch (error) {
-      console.error("Signup error:", error);
-      return {
-        success: false,
-        message: "Failed to connect to the server",
-      };
-    }
-  };
-
-  
-
-  
 
   const resendVerification = async (email) => {
     try {

@@ -1,130 +1,122 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import axios from '../../utils/axios';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Container,
-  Box,
-  Typography,
+  Paper,
   TextField,
   Button,
+  Typography,
+  Box,
   Alert,
-  Paper
-} from '@mui/material';
+  CircularProgress,
+  InputAdornment,
+} from "@mui/material";
+import LockResetIcon from "@mui/icons-material/LockReset";
+import { useTheme } from "@mui/material/styles";
 
 const ResetPassword = () => {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [tokenExpired, setTokenExpired] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const { token } = useParams();
+  const navigate = useNavigate();
+  const theme = useTheme();
   const { verifyResetToken, resetPassword } = useAuth();
+
+  const [formData, setFormData] = useState({
+    password: "",
+    confirmPassword: "",
+    loading: true,
+    tokenExpired: false,
+    error: "",
+    success: "",
+    showPassword: false,
+  });
 
   useEffect(() => {
     const verifyToken = async () => {
       try {
         const result = await verifyResetToken(token);
-        if (!result.success) {
-          setTokenExpired(true);
-        }
-        setLoading(false);
+        setFormData((prev) => ({
+          ...prev,
+          loading: false,
+          tokenExpired: result.error?.toLowerCase().includes("expired"),
+          error: result.error || "",
+        }));
       } catch (error) {
-        console.error('Token verification error:', error);
-        setTokenExpired(true);
-        setLoading(false);
+        setFormData((prev) => ({
+          ...prev,
+          loading: false,
+          error: "Failed to verify token",
+        }));
       }
     };
+
     verifyToken();
   }, [token, verifyResetToken]);
 
-
-  
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
-    // التحقق من تطابق كلمة المرور
-    if (newPassword !== confirmPassword) {
-      setError('كلمات المرور غير متطابقة');
+    // التحقق من تطابق كلمات المرور
+    if (formData.password !== formData.confirmPassword) {
+      setFormData((prev) => ({
+        ...prev,
+        error: "passwords do not match!",
+      }));
       return;
     }
 
     // التحقق من طول كلمة المرور
-    if (newPassword.length < 6) {
-      setError('يجب أن تكون كلمة المرور 6 أحرف على الأقل');
+    if (formData.password.length < 6) {
+      setFormData((prev) => ({
+        ...prev,
+        error: "password must be at least 6 characters longaaaaaa!",
+      }));
       return;
     }
 
     try {
-      const result = await resetPassword(token, newPassword);
+      const result = await resetPassword(token, formData.password);
+      console.log(result)
       if (result.success) {
-        setSuccess(result.message);
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
+        setFormData((prev) => ({
+          ...prev,
+          success:result.message ||"password  reset successfully",
+          error: "",
+        }));
+        setTimeout(() => navigate("/login"), 3000);
       } else {
-        setError(result.message);
+        setFormData((prev) => ({
+          ...prev,
+          error: result.error || "failed to reset password",
+        }));
       }
     } catch (error) {
-      setError('حدث خطأ أثناء إعادة تعيين كلمة المرور');
+      setFormData((prev) => ({
+        ...prev,
+        error: "failed to reset password",
+      }));
     }
   };
 
-  if (loading) {
-    return (
-      <Container component="main" maxWidth="xs">
-        <Box
-          sx={{
-            marginTop: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <Typography>جاري التحميل...</Typography>
-        </Box>
-      </Container>
-    );
-  }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      error: "", // مسح رسالة الخطأ عند الكتابة
+    }));
+  };
 
-  if (tokenExpired) {
+  if (formData.loading) {
     return (
-      <Container component="main" maxWidth="xs">
-        <Box
-          sx={{
-            marginTop: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-            <Typography component="h1" variant="h5" align="center" gutterBottom>
-              رمز إعادة تعيين كلمة المرور منتهي الصلاحية
-            </Typography>
-            
-            <Typography variant="body1" align="center" sx={{ mb: 3 }}>
-              عذراً، لقد انتهت صلاحية رابط إعادة تعيين كلمة المرور.
-              يرجى طلب رابط جديد.
-            </Typography>
-
-            <Button
-              fullWidth
-              variant="contained"
-              component={Link}
-              to="/login"
-              sx={{ mt: 1 }}
-            >
-              go to login
-            </Button>
-          </Paper>
-        </Box>
-      </Container>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <CircularProgress />
+      </Box>
     );
   }
 
@@ -133,59 +125,105 @@ const ResetPassword = () => {
       <Box
         sx={{
           marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography component="h1" variant="h5" align="center" gutterBottom>
-            إعادة تعيين كلمة المرور
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
+            reset password
           </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="كلمة المرور الجديدة"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoFocus
-            />
-
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              label="تأكيد كلمة المرور"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+          {formData.tokenExpired ? (
+            <>
+              <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+              {formData.error}
+              </Alert>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => navigate("/login")}
+                sx={{ mt: 1 }}
+              >
+                Return to Login
+              </Button>
+            </>
+          ) : (
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{ width: "100%" }}
             >
-              تغيير كلمة المرور
-            </Button>
-          </Box>
+              {formData.error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {formData.error}
+                </Alert>
+              )}
+              {formData.success && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {formData.success}
+                </Alert>
+              )}
+
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="كلمة المرور الجديدة"
+                type="password"
+                id="password"
+                value={formData.password}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockResetIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="confirmPassword"
+                label="Confirm password"
+                type="password"
+                id="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockResetIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+                disabled={formData.tokenExpired}
+              >
+                تغيير كلمة المرور
+              </Button>
+            </Box>
+          )}
         </Paper>
       </Box>
     </Container>

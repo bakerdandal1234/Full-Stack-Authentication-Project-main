@@ -6,7 +6,7 @@ const User = require('../models/Schema');
 const { verifyToken } = require('../middleware');
 
 // Constants
-const APP_URL = 'http://localhost:5174';
+const APP_URL = 'http://localhost:5173';
 const ROUTES = {
     LOGIN: `${APP_URL}/login`,
     SUCCESS: `${APP_URL}/auth/success`
