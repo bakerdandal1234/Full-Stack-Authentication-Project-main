@@ -69,8 +69,8 @@ router.get('/google', passport.authenticate('google', {
 }));
 router.get('/google/callback', handleOAuthCallback('google'));
 
-router.get('/linkedin', passport.authenticate('linkedin'));
-router.get('/linkedin/callback', handleOAuthCallback('linkedin'));
+router.get('/discord', passport.authenticate('discord'));
+router.get('/discord/callback', handleOAuthCallback('discord'));
 
 // Get current user info
 router.get('/me', verifyToken, async (req, res) => {

@@ -24,12 +24,12 @@ import {
   Person as PersonIcon,
   HowToReg as HowToRegIcon,
 } from "@mui/icons-material";
-
+import ErrorAlert from "../../components/ErrorAlert.jsx";
 const Signup = () => {
   const navigate = useNavigate();
   const { signup } = useAuth();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  // const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [formData, setFormData] = useState({
     username: "",
@@ -47,8 +47,7 @@ const Signup = () => {
     },
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = ({ target: { name, value } }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -195,9 +194,15 @@ const Signup = () => {
             </Box>
 
             {formData.errors.general && (
-              <Alert severity="error" sx={{ width: "100%" }}>
-                {formData.errors.general}
-              </Alert>
+              <ErrorAlert
+                error={formData.errors.general}
+                onClose={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    errors: { ...prev.errors, general: "" },
+                  }))
+                }
+              />
             )}
 
             <Box

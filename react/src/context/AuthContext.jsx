@@ -109,21 +109,14 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
-      console.log('Server response:', data);
       
-      // If login was successful
       if (data.success) {
         setAccessToken(data.accessToken);
         setUser(data.user);
         setIsAuthenticated(true);
-        return { success: true };
       }
       
-      // Return error from server
-      return { 
-        success: false,
-        error: data.error
-      };
+      return data; 
     } catch (error) {
       console.error('Login error:', error);
       return {
@@ -144,27 +137,14 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
-      console.log('Signup response:', data);
 
-      // إذا كان هناك خطأ من السيرفر
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.error || 'Signup failed'
-        };
-      }
-
-      // في حالة النجاح
-      if (data.accessToken) {
+      if (data.success) {
         setAccessToken(data.accessToken);
         setUser(data.user);
         setIsAuthenticated(true);
       }
 
-      return {
-        success: true,
-        message: data.message
-      };
+      return data;
     } catch (error) {
       console.error("Signup error:", error);
       return {
@@ -186,28 +166,16 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-            success: false,
-            ...data, // ينقل كل البيانات من السيرفر
-        };
-    }
-
-      return {
-        success: true,
-        message: data.message,
-      };
+      return data;
     } catch (error) {
       console.error("Forgot password error:", error);
       return {
         success: false,
-        message: "Failed to connect to the server",
+        error: "Failed to connect to the server"
       };
     }
   };
 
-  
   const resetPassword = async (token, newPassword) => {
     try {
       const response = await fetch(`http://localhost:3000/reset-password/${token}`, {
@@ -220,23 +188,12 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          ...data,
-        };
-      }
-
-      return {
-        success: true,
-        message: data.message,
-      };
+      return data;
     } catch (error) {
       console.error("Reset password error:", error);
       return {
         success: false,
-        message: "Failed to reset password",
+        error: "Failed to connect to the server"
       };
     }
   };
@@ -251,23 +208,15 @@ export const AuthProvider = ({ children }) => {
         },
       });
       const data = await response.json();
-      if (!response.ok) {
-        return {
-          success: false,
-          ...data,
-        };
-      }
-
-      return { success: true };
+      return data;
     } catch (error) {
       console.error("Token verification error:", error);
       return {
         success: false,
-        message: "Token verification failed",
+        error: "Failed to connect to the server"
       };
     }
   };
-
 
   const resendVerification = async (email) => {
     try {
@@ -281,23 +230,12 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          ...data,
-        };
-      }
-
-      return {
-        success: true,
-        message: data.message,
-      };
+      return data;
     } catch (error) {
       console.error("Resend verification error:", error);
       return {
         success: false,
-        message: "Failed to resend verification email",
+        error: "Failed to connect to the server"
       };
     }
   };
@@ -313,23 +251,12 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          ...data,
-        };
-      }
-
-      return {
-        success: true,
-        message: data.message,
-      };
+      return data;
     } catch (error) {
       console.error("Email verification error:", error);
       return {
         success: false,
-        message: "Failed to verify email",
+        error: "Failed to connect to the server"
       };
     }
   };

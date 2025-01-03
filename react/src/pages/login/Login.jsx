@@ -27,8 +27,7 @@ import {
   Close as CloseIcon,
   Login as LoginIcon,
 } from "@mui/icons-material";
-import ErrorAlert from "../../components/ErrorAlert";
-
+import ErrorAlert from "../../components/ErrorAlert.jsx";
 const Login = () => {
   const navigate = useNavigate();
   const { login, forgotPassword } = useAuth();

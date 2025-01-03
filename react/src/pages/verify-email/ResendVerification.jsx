@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Alert } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
-
+import ErrorAlert from '../../components/ErrorAlert.jsx'
 const ResendVerification = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState({
@@ -47,9 +47,11 @@ const ResendVerification = () => {
       />
 
       {status.message && (
-        <Alert severity={status.type} sx={{ mb: 2 }}>
-          {status.message}
-        </Alert>
+       <ErrorAlert
+       severity={status.type}
+       error={status.message}
+       onClose={() => setStatus({ ...status, message: '' })}
+     />
       )}
 
       <Button

@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import { useTheme } from "@mui/material/styles";
+import ErrorAlert from "../../components/ErrorAlert.jsx";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -141,9 +142,10 @@ const ResetPassword = () => {
 
           {formData.tokenExpired ? (
             <>
-              <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
-              {formData.error}
-              </Alert>
+              <ErrorAlert 
+                error={formData.error}
+                onClose={() => setFormData(prev => ({ ...prev, error: "" }))}
+              />
               <Button
                 fullWidth
                 variant="contained"
@@ -160,14 +162,17 @@ const ResetPassword = () => {
               sx={{ width: "100%" }}
             >
               {formData.error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {formData.error}
-                </Alert>
+                <ErrorAlert 
+                  error={formData.error}
+                  onClose={() => setFormData(prev => ({ ...prev, error: "" }))}
+                />
               )}
               {formData.success && (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                  {formData.success}
-                </Alert>
+                <ErrorAlert 
+                  severity="success"
+                  error={formData.success}
+                  onClose={() => setFormData(prev => ({ ...prev, success: "" }))}
+                />
               )}
 
               <TextField
