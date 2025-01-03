@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import Navigation from "../../components/Navigation";
 import {
   Container,
   Box,
@@ -137,7 +136,6 @@ const Login = () => {
 
   return (
     <>
-      <Navigation />
       <Container
         component="main"
         maxWidth="sm"
@@ -399,23 +397,24 @@ const Login = () => {
                     sx={{
                       py: 1.5,
                       textTransform: "none",
-                      borderColor: "#24292E",
-                      color: "#24292E",
+                      borderColor: "#EA4355",
+                      backgroundColor: "#EA4355",
+                      color: "#FFFFFF",
+                      fontSize: "16px",
+                      fontWeight: "bold",
                       "&:hover": {
-                        borderColor: "#24292E",
-                        backgroundColor: "rgba(36, 41, 46, 0.04)",
+                        borderColor: "#B02C3E",
+                        backgroundColor: "#B02C3E",
                       },
                     }}
                   >
-                    login with GitHub
+                    Login with GitHub
                   </Button>
                 </Box>
               </Box>
             </Box>
           </Paper>
         </Fade>
-
-
 
         <Modal
           open={formData.showForgotPassword}
@@ -461,7 +460,7 @@ const Login = () => {
                   <CloseIcon />
                 </IconButton>
               </Box>
-          
+
               {formData.resetStatus && (
                 <Alert
                   severity={
@@ -487,7 +486,7 @@ const Login = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <EmailIcon/>
+                        <EmailIcon />
                       </InputAdornment>
                     ),
                   }}
@@ -515,8 +514,6 @@ const Login = () => {
             </Paper>
           </Fade>
         </Modal>
-
-        
       </Container>
     </>
   );

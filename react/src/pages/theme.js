@@ -1,167 +1,124 @@
-import React from "react";
 import { createContext, useState, useMemo } from "react";
 import { createTheme } from "@mui/material/styles";
-import { grey, blue } from "@mui/material/colors";
 
-export const getDesignTokens = (mode) => ({
+// تعريف الخط والعناوين
+const FONT_FAMILY = ['Tajawal', 'sans-serif'].join(',');
+const HEADINGS = {
+  h1: 40,
+  h2: 32,
+  h3: 24,
+  h4: 20,
+  h5: 16,
+  h6: 14
+};
+
+// إنشاء إعدادات typography
+const typography = {
+  fontFamily: FONT_FAMILY,
+  fontSize: 12,
+  ...Object.entries(HEADINGS).reduce((acc, [key, size]) => ({
+    ...acc,
+    [key]: {
+      fontFamily: FONT_FAMILY,
+      fontSize: size
+    }
+  }), {})
+};
+
+// إعدادات الثيم
+const themeSettings = (mode) => ({
   palette: {
-    mode,
-    ...(mode === "light"
-      ? {
-          // Light mode palette
-          primary: {
-            main: blue[700],
-            light: blue[400],
-            dark: blue[800],
-          },
-          background: {
-            default: "#f5f5f5",
-            paper: "#ffffff",
-          },
-          text: {
-            primary: "#2B3445",
-            secondary: "#666666",
-          },
-          neutral: {
-            main: "#64748B",
-            contrastText: "#fff",
-          },
-          favColor: {
-            main: grey[300],
-          },
-          divider: grey[200],
-        }
-      : {
-          // Dark mode palette
-          primary: {
-            main: blue[400],
-            light: blue[300],
-            dark: blue[500],
-          },
-          background: {
-            default: "#121212",
-            paper: "#1e1e1e",
-          },
-          text: {
-            primary: "#ffffff",
-            secondary: "rgba(255, 255, 255, 0.7)",
-          },
-          neutral: {
-            main: grey[600],
-            contrastText: "#fff",
-          },
-          favColor: {
-            main: grey[800],
-          },
-          divider: grey[700],
-        }),
+    mode: mode,
+    ...(mode === 'dark' ? {
+      // إعدادات الوضع المظلم
+      primary: {
+        main: '#6870fa',
+        light: '#868dfb',
+        dark: '#535ac8',
+        lighter: 'rgba(104, 112, 250, 0.08)'
+      },
+      background: {
+        default: '#1F2A40',
+        paper: '#1F2A40'
+      },
+      text: {
+        primary: '#fff',
+        secondary: 'rgba(255, 255, 255, 0.7)'
+      },
+      error: {
+        main: '#db4f4a',
+        light: '#e2726e',
+        dark: '#af3f3b',
+        lighter: 'rgba(219, 79, 74, 0.1)'
+      }
+    } : {
+      // إعدادات الوضع المضيء
+      primary: {
+        main: '#6870fa',
+        light: '#868dfb',
+        dark: '#535ac8',
+        lighter: 'rgba(104, 112, 250, 0.08)'
+      },
+      background: {
+        default: '#fcfcfc',
+        paper: '#ffffff'
+      },
+      text: {
+        primary: '#2B3445',
+        secondary: '#666666'
+      },
+      error: {
+        main: '#db4f4a',
+        light: '#e2726e',
+        dark: '#af3f3b',
+        lighter: 'rgba(219, 79, 74, 0.1)'
+      }
+    })
   },
-  typography: {
-    fontFamily: [
-      'Roboto',
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Arial',
-      'sans-serif',
-    ].join(','),
-    h1: {
-      fontSize: '2.5rem',
-      fontWeight: 600,
-    },
-    h2: {
-      fontSize: '2rem',
-      fontWeight: 600,
-    },
-    h3: {
-      fontSize: '1.75rem',
-      fontWeight: 600,
-    },
-    h4: {
-      fontSize: '1.5rem',
-      fontWeight: 500,
-    },
-    h5: {
-      fontSize: '1.25rem',
-      fontWeight: 500,
-    },
-    h6: {
-      fontSize: '1rem',
-      fontWeight: 500,
-    },
-    body1: {
-      fontSize: '1rem',
-      lineHeight: 1.5,
-    },
-    body2: {
-      fontSize: '0.875rem',
-      lineHeight: 1.43,
-    },
-  },
+  typography,
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
           textTransform: 'none',
           borderRadius: 8,
-          padding: '8px 16px',
-        },
+         
+        }
       },
+      variants: []
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          boxShadow: mode === 'light' 
-            ? '0px 2px 4px rgba(0,0,0,0.1)' 
-            : '0px 2px 4px rgba(255,255,255,0.1)',
-        },
-      },
-    },
-  },
-  shape: {
-    borderRadius: 8,
-  },
-  shadows: mode === 'light'
-    ? [
-        'none',
-        '0px 2px 1px -1px rgba(0,0,0,0.06),0px 1px 1px 0px rgba(0,0,0,0.04),0px 1px 3px 0px rgba(0,0,0,0.02)',
-        '0px 3px 1px -2px rgba(0,0,0,0.08),0px 2px 2px 0px rgba(0,0,0,0.06),0px 1px 5px 0px rgba(0,0,0,0.03)',
-        // ... add more shadow levels as needed
-      ]
-    : [
-        'none',
-        '0px 2px 1px -1px rgba(255,255,255,0.06),0px 1px 1px 0px rgba(255,255,255,0.04),0px 1px 3px 0px rgba(255,255,255,0.02)',
-        '0px 3px 1px -2px rgba(255,255,255,0.08),0px 2px 2px 0px rgba(255,255,255,0.06),0px 1px 5px 0px rgba(255,255,255,0.03)',
-        // ... add more shadow levels as needed
-      ],
+          borderRadius: 8
+        }
+      }
+    }
+  }
 });
 
-// Context for color mode
+// سياق وضع الألوان
 export const ColorModeContext = createContext({
   toggleColorMode: () => {},
 });
 
 export const useMode = () => {
-  const [mode, setMode] = useState(
-    localStorage.getItem("mode") ? localStorage.getItem("mode") : "light"
-  );
+  // استرجاع الوضع المحفوظ من localStorage أو استخدام 'light' كقيمة افتراضية
+  const [mode, setMode] = useState(localStorage.getItem('themeMode') || 'light');
 
   const colorMode = useMemo(
     () => ({
-      toggleColorMode: () =>
-        setMode((prev) => (prev === "light" ? "dark" : "light")),
+      toggleColorMode: () => {
+        const newMode = mode === "light" ? "dark" : "light";
+        setMode(newMode);
+        // حفظ الوضع الجديد في localStorage
+        localStorage.setItem('themeMode', newMode);
+      },
     }),
-    []
+    [mode]
   );
 
-  const theme = useMemo(() => createTheme(getDesignTokens(mode)), [mode]);
+  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
+
   return [theme, colorMode];
 };

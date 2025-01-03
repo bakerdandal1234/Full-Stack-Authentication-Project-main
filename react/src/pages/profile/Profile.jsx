@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import Navigation from '../../components/Navigation';
+
 import {
   Container,
   Paper,
@@ -53,7 +53,7 @@ const Profile = () => {
   if (loading) {
     return (
       <>
-        <Navigation />
+      
         <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
           <CircularProgress />
         </Container>

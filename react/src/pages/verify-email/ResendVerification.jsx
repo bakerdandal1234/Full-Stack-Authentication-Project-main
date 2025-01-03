@@ -6,26 +6,22 @@ const ResendVerification = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState({
     loading: false,
-    error: '',
-    success: ''
+    type: '', // 'success' or 'error'
+    message: ''
   });
   const { resendVerification } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) {
-      setStatus(prev => ({ ...prev, error: 'Email is required' }));
-      return;
-    }
-
-    setStatus({ loading: true, error: '', success: '' });
+    
+    setStatus({ loading: true, type: '', message: '' });
 
     const result = await resendVerification(email);
     
     setStatus({
       loading: false,
-      error: result.success ? '' : result.message,
-      success: result.success ? result.message : ''
+      type: result.success ? 'success' : 'error',
+      message: result.success ? result.message : result.error
     });
     
     if (result.success) {
@@ -50,15 +46,9 @@ const ResendVerification = () => {
         sx={{ mb: 2, mt: 1 }}
       />
 
-      {status.error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {status.error}
-        </Alert>
-      )}
-
-      {status.success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {status.success}
+      {status.message && (
+        <Alert severity={status.type} sx={{ mb: 2 }}>
+          {status.message}
         </Alert>
       )}
 

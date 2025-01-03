@@ -9,8 +9,7 @@ import ResendVerification from './ResendVerification';
 const VerifyEmail = () => {
   const [state, setState] = useState({
     status: 'verifying',
-    message: '',
-    isExpired: false
+    message: ''
   });
   const { token } = useParams();
   const { verifyEmail } = useAuth();
@@ -20,8 +19,7 @@ const VerifyEmail = () => {
       const result = await verifyEmail(token);
       setState({
         status: result.success ? 'success' : 'error',
-        message: result.message,
-        isExpired: result.isExpired
+        message: result.message || result.error
       });
     };
 
@@ -64,7 +62,7 @@ const VerifyEmail = () => {
             <Typography variant="h6" textAlign="center" color="error">
               {state.message}
             </Typography>
-            {state.isExpired && <ResendVerification />}
+            {state.status === 'error' && <ResendVerification />}
           </Box>
         );
 

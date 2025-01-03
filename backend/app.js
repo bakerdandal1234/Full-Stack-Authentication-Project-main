@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const session = require('express-session');
 const csrf = require('csurf');
+const rateLimit = require("express-rate-limit");
 require('dotenv').config();
 
 // Import local modules
@@ -18,6 +19,25 @@ const oauth = require('./config/oauth');
 
 // Initialize Express app
 const app = express();
+
+// ============================================================================
+// rate limiting
+// ============================================================================
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 15, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    handler: (req, res) => {
+        res.status(429).json({
+          error: "You have exceeded the allowed number of requests. Please try again later.",
+          retryAfter: `${Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000)} ثانية`,
+        });
+      },
+});
+// Apply rate Limiting to all requests
+app.use(apiLimiter)
+
 
 // ============================================================================
 // Database Configuration

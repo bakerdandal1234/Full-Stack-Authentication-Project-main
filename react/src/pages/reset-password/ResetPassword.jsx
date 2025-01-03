@@ -38,7 +38,7 @@ const ResetPassword = () => {
         setFormData((prev) => ({
           ...prev,
           loading: false,
-          tokenExpired: result.error?.toLowerCase().includes("expired"),
+          tokenExpired: result.error?.toLowerCase().includes("expired"), //true or false
           error: result.error || "",
         }));
       } catch (error) {
@@ -69,7 +69,7 @@ const ResetPassword = () => {
     if (formData.password.length < 6) {
       setFormData((prev) => ({
         ...prev,
-        error: "password must be at least 6 characters longaaaaaa!",
+        error: "password must be at least 6 characters long!",
       }));
       return;
     }
@@ -84,11 +84,6 @@ const ResetPassword = () => {
           error: "",
         }));
         setTimeout(() => navigate("/login"), 3000);
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          error: result.error || "failed to reset password",
-        }));
       }
     } catch (error) {
       setFormData((prev) => ({
@@ -220,7 +215,7 @@ const ResetPassword = () => {
                 sx={{ mt: 3, mb: 2 }}
                 disabled={formData.tokenExpired}
               >
-                تغيير كلمة المرور
+                reset password
               </Button>
             </Box>
           )}

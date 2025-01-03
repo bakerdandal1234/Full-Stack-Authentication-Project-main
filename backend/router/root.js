@@ -306,7 +306,7 @@ router.get('/verify-email/:token', async (req, res) => {
 // إعادة إرسال رابط التحقق
 router.post('/resend-verification', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email } = req.body; 
 
     if (!email) {
       return handleValidationError(res, 'Email is required');

@@ -1,4 +1,4 @@
-import Navigation from '../components/Navigation';
+
 import { useAuth } from '../context/AuthContext';
 
 const About = () => {
@@ -7,7 +7,7 @@ const About = () => {
 
   return (
     <div>
-      <Navigation/>
+    
       {auth.isAuthenticated ? (
         <div>
           <h1>{auth.user.username}</h1>
